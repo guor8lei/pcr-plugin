@@ -17,12 +17,44 @@ Function PCR(primer1 As String, primer2 As String, template As String)
             Exit Function
     End If
     
-    PCR = ReverseComplement(primer1)
+    'Find best annealing site for forward oligo
+    Dim circularTemplate As String
+    circularTemplate = template & template
+    
+    Dim currLength As Integer
+    Dim bestForwardAnnealSite As String
+    Dim currAnnealSite As String
+    Dim foundIndex As Integer
+    
+    For currLength = Len(primer1) To 1 Step -1
+        currAnnealSite = Right(primer1, currLength)
+        foundIndex = InStr(circularTemplate, currAnnealSite)
+        If foundIndex > 0 Then
+            bestForwardAnnealSite = currAnnealSite
+            template = RotateStringLeft(template, foundIndex - 1)
+            Exit For
+        End If
+    Next
+    
+    If Len(bestForwardAnnealSite) = 0 Then
+            MsgBox "Annealing site not found."
+            Exit Function
+    End If
+    
+    PCR = bestForwardAnnealSite
+    MsgBox template
 
 End Function
 
 Function IsValidDna(inputStr As String) As Boolean
-    IsValidDna = inputStr Like WorksheetFunction.Rept("[ATCGRYSWKMBDHVN]", Len(inputStr))
+    Dim intPos As Integer
+    IsValidDna = True
+    For intPos = 1 To Len(inputStr)
+        If Not Mid(inputStr, intPos, 1) Like WorksheetFunction.Rept("[ATCGRYSWKMBDHVN]", 1) Then
+            IsValidDna = False
+            Exit For
+        End If
+    Next
 End Function
 
 Function ReverseComplement(forwardStr As String) As String
@@ -42,4 +74,9 @@ Function ReverseComplement(forwardStr As String) As String
                 ReverseComplement = "N" & ReverseComplement
         End Select
     Next
+End Function
+
+'Rotates string left (anti-clockwise) by d elements
+Function RotateStringLeft(inputStr As String, d As Integer) As String
+    RotateStringLeft = Right(inputStr, Len(inputStr) - d) & Left(inputStr, d)
 End Function
