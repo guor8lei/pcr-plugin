@@ -17,32 +17,47 @@ Function PCR(primer1 As String, primer2 As String, template As String)
             Exit Function
     End If
     
-    'Find best annealing site for forward oligo
-    Dim circularTemplate As String
-    circularTemplate = template & template
+    'Reverse complement primer 2 (reverse oligo)
+    primer2 = ReverseComplement(primer2)
     
-    Dim currLength As Integer
-    Dim bestForwardAnnealSite As String
-    Dim currAnnealSite As String
-    Dim foundIndex As Integer
+    'Find best annealing sites for template
+    Dim forwardPrimer1AnnealSite As String
+    Dim forwardPrimer2AnnealSite As String
+    Dim forwardAnnealTotalLength As Integer
+    forwardAnnealTotalLength = FindAnnealSites(primer1, primer2, template, forwardPrimer1AnnealSite, forwardPrimer2AnnealSite)
     
-    For currLength = Len(primer1) To 1 Step -1
-        currAnnealSite = Right(primer1, currLength)
-        foundIndex = InStr(circularTemplate, currAnnealSite)
-        If foundIndex > 0 Then
-            bestForwardAnnealSite = currAnnealSite
-            template = RotateStringLeft(template, foundIndex - 1)
-            Exit For
-        End If
-    Next
+    'Find best annealing sites for reverse template
+    Dim reverseTemplate As String
+    reverseTemplate = ReverseComplement(template)
     
-    If Len(bestForwardAnnealSite) = 0 Then
-            MsgBox "Annealing site not found."
-            Exit Function
+    Dim reversePrimer1AnnealSite As String
+    Dim reversePrimer2AnnealSite As String
+    Dim reverseAnnealTotalLength As Integer
+    reverseAnnealTotalLength = FindAnnealSites(primer1, primer2, reverseTemplate, reversePrimer1AnnealSite, reversePrimer2AnnealSite)
+    
+    'Compare template vs reverse template anneal sites, determine final anneal sites
+    Dim finalPrimer1AnnealSite As String
+    Dim finalPrimer2AnnealSite As String
+    
+    If reverseAnnealTotalLength > forwardAnnealTotalLength Then
+        template = reverseTemplate
+        finalPrimer1AnnealSite = reversePrimer1AnnealSite
+        finalPrimer2AnnealSite = reversePrimer2AnnealSite
+    Else
+        finalPrimer1AnnealSite = forwardPrimer1AnnealSite
+        finalPrimer2AnnealSite = forwardPrimer2AnnealSite
     End If
     
-    PCR = bestForwardAnnealSite
-    MsgBox template
+    'Find flank region based on final anneal sites
+    Dim circularTemplate As String
+    circularTemplate = template & template
+    template = RotateStringLeft(template, InStr(circularTemplate, finalPrimer1AnnealSite) - 1)
+    
+    Dim flankRegion As String
+    flankRegion = Mid(template, Len(finalPrimer1AnnealSite) + 1, InStr(template, finalPrimer2AnnealSite) - Len(finalPrimer1AnnealSite) - 1)
+    
+    'Construct final PCR product
+    PCR = primer1 & flankRegion & primer2
 
 End Function
 
@@ -79,4 +94,49 @@ End Function
 'Rotates string left (anti-clockwise) by d elements
 Function RotateStringLeft(inputStr As String, d As Integer) As String
     RotateStringLeft = Right(inputStr, Len(inputStr) - d) & Left(inputStr, d)
+End Function
+
+Function FindAnnealSites(primer1 As String, primer2 As String, template As String, ByRef primer1AnnealSite As String, ByRef primer2AnnealSite As String) As Integer
+    Dim minAnnealLength As Integer
+    minAnnealLength = 16
+
+    Dim circularTemplate As String
+    circularTemplate = template & template
+    
+    Dim currPrimer1Length As Integer
+    Dim currPrimer2Length As Integer
+    Dim currPrimer1AnnealSite As String
+    Dim currPrimer2AnnealSite As String
+    Dim primer1FoundIndex As Integer
+    Dim primer2FoundIndex As Integer
+    Dim annealTotalLength As Integer
+    
+    'Find best annealing site for primer1 (forward oligo)
+    For currPrimer1Length = Len(primer1) To minAnnealLength Step -1
+        If currPrimer1Length + Len(primer2) < annealTotalLength Then
+            Exit For
+        End If
+    
+        currPrimer1AnnealSite = Right(primer1, currPrimer1Length)
+        primer1FoundIndex = InStr(circularTemplate, currPrimer1AnnealSite)
+        If primer1FoundIndex > 0 Then
+            template = RotateStringLeft(template, primer1FoundIndex - 1)
+            
+            'Find best annealing site for primer2 (reverse oligo)
+            For currPrimer2Length = Len(primer2) To minAnnealLength Step -1
+                currPrimer2AnnealSite = Left(primer2, currPrimer2Length)
+                primer2FoundIndex = InStr(template, currPrimer2AnnealSite)
+                If primer2FoundIndex > 0 Then
+                    If currPrimer1Length + currPrimer2Length > annealTotalLength Then
+                        annealTotalLength = currPrimer1Length + currPrimer2Length
+                        primer1AnnealSite = currPrimer1AnnealSite
+                        primer2AnnealSite = currPrimer2AnnealSite
+                    End If
+                End If
+            Next
+        End If
+    Next
+    
+    FindAnnealSites = annealTotalLength
+    
 End Function
