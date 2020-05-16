@@ -9,7 +9,7 @@ To use this Excel Add-in:
 1. Clone the repository: `git clone https://github.com/guor8lei/pcr-plugin.git`
 2. Open up an empty Excel workbook.
 3. Install the `SyntheticBiologyPlugin.xlam` Add-In. See [here](https://www.contextures.com/exceladdins.html#install) for instructions on how to do this in Office for Windows, and [here](https://www.excelcampus.com/install-excel-add-in-mac-2011/) for instructions on how to do this in Office for Mac.
-4. Alternatively, you can create a new Add-In and import the individual modules. There are 3 PCR simulator modules you can import: `PCRSimulatorV1.bas`,`PCRSimulatorV2.bas`, and `PCRSimulatorV3.bas`. In addition, there are 2 helper modules to import: `CollectionUtil.bas` (contains all helper functions for managing lists and sets in Excel VBA) and  `SeqUtil.bas` (contains all helper functions for managing and manipulating DNA sequences).
+4. Alternatively, you can create a new Add-In and import the individual modules. There are 4 PCR simulator modules you can import: `PCRSimulatorV1.bas`,`PCRSimulatorV2.bas`, `PCRSimulatorV3.bas`, and `PCRSimulatorV4.bas`. In addition, there are 2 helper modules to import: `CollectionUtil.bas` (contains all helper functions for managing lists and sets in Excel VBA) and  `SeqUtil.bas` (contains all helper functions for managing and manipulating DNA sequences).
 
 ## Usage
 This Add-In contains 3 separate functions for simulating PCR products, as well as a variety of functions useful for manipulating DNA sequences:
@@ -17,7 +17,9 @@ This Add-In contains 3 separate functions for simulating PCR products, as well a
 - `=PCR_V1(primer1, primer2, template)` - Predicts PCR product based on `PCRSimulatorV1` (see Approaches below)
 - `=PCR_V2(primer1, primer2, template)` - Predicts PCR product based on `PCRSimulatorV2` (see Approaches below)
 - `=PCR_V3(primer1, primer2, template)` - Predicts PCR product based on `PCRSimulatorV3` (see Approaches below)
+- `=PCR_V4(primer1, primer2, template)` - Predicts PCR product based on `PCRSimulatorV4` (see Approaches below)
 - `=PCR_V3(primer1, primer2, "")` - Predicts PCR product without template based on `PCRSimulatorV3` (see Approaches below)
+- `=PCR_V4(primer1, primer2, "")` - Predicts PCR product without template based on `PCRSimulatorV4` (see Approaches below)
 - `=IsValidDNA(str)` - Checks if input is a valid DNA sequence (degenerate bases allowed)
 - `=ReverseComplement(forwardRead)` - Returns reverse complement of DNA sequence
 - `=EditDistance(s1, s2)` - Compute edit distance between two Strings using the Smith-Waterman Algorithm, does not count degenerate base pairs
@@ -63,7 +65,15 @@ Overall, this approached worked just as well as `PCRSimulatorV1`; it predicted t
 
 The simulator performs accurately for regular PCRs, PCRs with reverse complemented templates, PCRs where the template needed to be rotated for the oligos to anneal, and PCRs with 2 oligos and no template. However, similar to `NewPCRSimulator`, it did not perform accurately with PCR with mutagenic oligos or IPCRs. Further investigation is needed to resolve these bugs. 
 
-Another disadvantage of this simulator is that it runs much slower than the other two simulators. The main reason for this may be due to the lack of a Set data structure in Excel VBA that is supported both in Windows and Mac, so a list was used as a replacement.
+Another disadvantage of this simulator is that it runs much slower than the previous two simulators. The main reason for this may be due to the lack of a Set data structure in Excel VBA that is supported both in Windows and Mac, so a list was used as a replacement.
+
+#### `PCRSimulatorV4`
+`PCRSimulatorV4` is extremely similar to `PCRSimulatorV3` but it insteads incorporates a breaker variable to prevent infinite loops when simulating annealing and disassociation. In addition, instead of handling circular templates by just concatenating two copies of the template together, this simulator insteads strategically rotates the template so that the full oligo doesn't span across the beginning and the end anymore. The code is based on Prof. Anderson's merged `PCRSimulator` class in `ConstructionFileSimulator`. 
+
+The simulator performs accurately for regular PCRs, PCRs with reverse complemented templates, PCRs where the template needed to be rotated for the oligos to anneal, IPCRs, and PCRs with 2 oligos and no template. 
+
+However, the simualtor still runs slow due to the Excel VBA data structure limitations.
+
 
 ## Future
 
