@@ -133,3 +133,14 @@ Public Function EditDistance(ByVal s1 As String, ByVal s2 As String) As Integer
     EditDistance = DistArray(s1Len, s2Len)
 End Function
 
+'Checks if passed DNAs are rotations or reverse complements of each other
+Public Function AreEqualDNA(ByVal s1 As String, ByVal s2 As String) As Boolean
+    s1 = ProcessDna(s1)
+    s2 = ProcessDna(s2)
+    If (Len(s1) = Len(s2) And (InStr(s1 & s1, s2) <> 0 Or InStr(s1 & s1, ReverseComplement(s2)) <> 0)) Then
+        AreEqualDNA = True
+    Else
+        AreEqualDNA = False
+    End If
+End Function
+
